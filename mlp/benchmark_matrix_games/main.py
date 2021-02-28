@@ -21,7 +21,7 @@ flags.DEFINE_integer("num_eval_episodes", int(1e3),
                      "Number of episodes to use during each evaluation.")
 flags.DEFINE_integer("eval_freq", int(1e3),
                      "The frequency (in episodes) to run evaluation.")
-flags.DEFINE_string("game", "matrix_rps", "Game to load.")  # matrix_rps, matrix_mp, matrix_sh, matrix_cd
+flags.DEFINE_string("game", "matrix_mp", "Game to load.")  # matrix_rps, matrix_mp, matrix_sh, matrix_cd
 
 
 def eval_agents(env, agents, num_episodes):
@@ -73,7 +73,7 @@ def train_agents(env, agents):
     return
 
 
-def draw_directional_field():
+def draw_replicator_dynamics_3x3():
     game = pyspiel.load_game(FLAGS.game)
     payoff_tensor = utils.game_payoffs_array(game)
     dyn = dynamics.SinglePopulationDynamics(payoff_tensor, dynamics.replicator)
@@ -82,13 +82,55 @@ def draw_directional_field():
     ax = fig.add_subplot(111, projection="3x3")
     ax.quiver(dyn)
     ax.set(labels=["Rock", "Paper", "Scissors"])
-    plt.savefig("images/directional_field_rps.png")
+    plt.savefig("images/directional_field_" + FLAGS.game + ".png")
 
     fig = plt.figure(figsize=(4, 4))
     ax = fig.add_subplot(111, projection="3x3")
     ax.streamplot(dyn)
     ax.set(labels=["Rock", "Paper", "Scissors"])
-    plt.savefig("images/streamline_rps.png")
+    plt.savefig("images/streamline_" + FLAGS.game + ".png")
+
+    return
+
+
+def draw_replicator_dynamics_2x2():
+    game = pyspiel.load_game(FLAGS.game)
+    payoff_tensor = utils.game_payoffs_array(game)
+    dyn = dynamics.MultiPopulationDynamics(payoff_tensor, dynamics.replicator)
+
+    fig = plt.figure(figsize=(4, 4))
+    ax = fig.add_subplot(111, projection="2x2")
+    ax.quiver(dyn)
+
+    if FLAGS.game == "matrix_mp":
+        ax.set_title("Matching Pennies")
+        ax.set_xlabel("Pr(Heads)")
+        ax.set_ylabel("Pr(Heads)")
+    elif FLAGS.game == "matrix_sh":
+        ax.set_title("Stag Hunt")
+        ax.set_xlabel("Pr(Stag)")
+        ax.set_ylabel("Pr(Stag)")
+    elif FLAGS.game == "matrix_cd":
+        ax.set_title("Chicken-Dare")
+
+    plt.savefig("images/directional_field_" + FLAGS.game + ".png")
+
+    fig = plt.figure(figsize=(4, 4))
+    ax = fig.add_subplot(111, projection="2x2")
+    ax.streamplot(dyn)
+
+    if FLAGS.game == "matrix_mp":
+        ax.set_title("Matching Pennies")
+        ax.set_xlabel("Pr(Heads)")
+        ax.set_ylabel("Pr(Heads)")
+    elif FLAGS.game == "matrix_sh":
+        ax.set_title("Stag Hunt")
+        ax.set_xlabel("Pr(Stag)")
+        ax.set_ylabel("Pr(Stag)")
+    elif FLAGS.game == "matrix_cd":
+        ax.set_title("Chicken-Dare")
+
+    plt.savefig("images/streamline_" + FLAGS.game + ".png")
 
     return
 
@@ -123,7 +165,10 @@ def main(_):
     sess2.run(tf.global_variables_initializer())
     sess3.run(tf.global_variables_initializer())
 
-    draw_directional_field()
+    if FLAGS.game == "matrix_rps":
+        draw_replicator_dynamics_3x3()
+    else:
+        draw_replicator_dynamics_2x2()
 
     # Train the first set of agents
     logging.info("Agent 1: Q-learning | Agent 2: Q-learning")
