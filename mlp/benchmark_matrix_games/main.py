@@ -11,6 +11,7 @@ from open_spiel.python.algorithms import tabular_qlearner, eva, dqn
 from open_spiel.python.egt import dynamics
 from open_spiel.python.egt import utils
 from open_spiel.python.egt import visualization
+from open_spiel.python.egt import heuristic_payoff_table
 
 
 FLAGS = flags.FLAGS
@@ -21,7 +22,7 @@ flags.DEFINE_integer("num_eval_episodes", int(1e3),
                      "Number of episodes to use during each evaluation.")
 flags.DEFINE_integer("eval_freq", int(1e3),
                      "The frequency (in episodes) to run evaluation.")
-flags.DEFINE_string("game", "matrix_mp", "Game to load.")  # matrix_rps, matrix_mp, matrix_sh, matrix_cd
+flags.DEFINE_string("game", "matrix_cd", "Game to load.")  # matrix_rps, matrix_mp, matrix_sh, matrix_cd
 
 
 def eval_agents(env, agents, num_episodes):
@@ -112,6 +113,8 @@ def draw_replicator_dynamics_2x2():
         ax.set_ylabel("Pr(Stag)")
     elif FLAGS.game == "matrix_cd":
         ax.set_title("Chicken-Dare")
+        ax.set_xlabel("Pr(Dare)")
+        ax.set_ylabel("Pr(Dare)")
 
     plt.savefig("images/directional_field_" + FLAGS.game + ".png")
 
@@ -129,6 +132,8 @@ def draw_replicator_dynamics_2x2():
         ax.set_ylabel("Pr(Stag)")
     elif FLAGS.game == "matrix_cd":
         ax.set_title("Chicken-Dare")
+        ax.set_xlabel("Pr(Dare)")
+        ax.set_ylabel("Pr(Dare)")
 
     plt.savefig("images/streamline_" + FLAGS.game + ".png")
 
@@ -139,6 +144,10 @@ def main(_):
     env = rl_environment.Environment(FLAGS.game)
     num_players = env.num_players
     num_actions = env.action_spec()["num_actions"]
+
+    game = pyspiel.load_matrix_game(FLAGS.game)
+    payoff_tables = utils.game_payoffs_array(game)
+    print(payoff_tables)
 
     state_size = env.observation_spec()["info_state"][0]
     sess1 = tf.Session()  # not sure if multiple sessions are needed
