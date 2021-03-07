@@ -12,6 +12,7 @@ from open_spiel.python.egt import dynamics
 from open_spiel.python.egt import utils
 from open_spiel.python.egt import visualization
 from open_spiel.python.egt import heuristic_payoff_table
+from lbqlearner import LBQLearner
 
 
 FLAGS = flags.FLAGS
@@ -22,14 +23,14 @@ flags.DEFINE_integer("num_eval_episodes", int(1e3),
                      "Number of episodes to use during each evaluation.")
 flags.DEFINE_integer("eval_freq", int(1e3),
                      "The frequency (in episodes) to run evaluation.")
-flags.DEFINE_string("game", "matrix_cd", "Game to load.")  # matrix_rps, matrix_mp, matrix_sh, matrix_cd
+flags.DEFINE_string("game", "matrix_sh", "Game to load.")  # matrix_rps, matrix_mp, matrix_sh, matrix_cd
 
 
 def eval_agents(env, agents, num_episodes):
     """
     Evaluate the agents, returning a numpy array of average returns.
     """
-    wins = np.array([0] * env.num_players, dtype=np.float64)
+    rewards = np.array([0] * env.num_players, dtype=np.float64)
     actions = dict()
 
     for _ in range(num_episodes):
@@ -48,11 +49,10 @@ def eval_agents(env, agents, num_episodes):
                 actions[str(agent_output_actions)] = 1
 
         for i in range(env.num_players):
-            if time_step.rewards[i] > 0:
-                wins[i] += 1
+            rewards[i] += time_step.rewards[i]
 
     logging.info("Actions: %s", actions)
-    return wins / num_episodes
+    return rewards / num_episodes
 
 
 def train_agents(env, agents):
@@ -156,6 +156,7 @@ def main(_):
 
     agents1 = [
         tabular_qlearner.QLearner(player_id=0, num_actions=num_actions),
+        # LBQLearner(player_id=1, num_actions=num_actions, temperature=1)
         tabular_qlearner.QLearner(player_id=1, num_actions=num_actions)
         # eva.EVAAgent(session=sess, player_id=1, state_size=state_size, num_actions=num_actions, game=env)
     ]
@@ -185,7 +186,7 @@ def main(_):
         if cur_episode % int(FLAGS.eval_freq) == 0:
             logging.info("Starting episode %s", cur_episode)
             win_rates = eval_agents(env, agents1, FLAGS.num_eval_episodes)
-            logging.info("win_rates Agent 1 vs Agent 2 %s", win_rates)
+            logging.info("avg_reward Agent 1 vs Agent 2 %s", win_rates)
 
         train_agents(env, agents1)
 
@@ -195,7 +196,7 @@ def main(_):
         if cur_episode % int(FLAGS.eval_freq) == 0:
             logging.info("Starting episode %s", cur_episode)
             win_rates = eval_agents(env, agents2, FLAGS.num_eval_episodes)
-            logging.info("win_rates Agent 1 vs Agent 2 %s", win_rates)
+            logging.info("avg_reward Agent 1 vs Agent 2 %s", win_rates)
 
         train_agents(env, agents2)
 
@@ -205,7 +206,7 @@ def main(_):
         if cur_episode % int(FLAGS.eval_freq) == 0:
             logging.info("Starting episode %s", cur_episode)
             win_rates = eval_agents(env, agents3, FLAGS.num_eval_episodes)
-            logging.info("win_rates Agent 1 vs Agent 2 %s", win_rates)
+            logging.info("avg_reward Agent 1 vs Agent 2 %s", win_rates)
 
         train_agents(env, agents3)
 
