@@ -11,7 +11,7 @@ class LBQLearner(QLearner):
     Lenient Boltzmann Q-learner for matrix games
     """
 
-    def __init__(self, player_id, num_actions, temperature=1, kappa=10, discount_factor=1.0):
+    def __init__(self, player_id, num_actions, temperature=1., kappa=10, discount_factor=1.):
         super().__init__(player_id, num_actions, discount_factor)
         self._temperature = temperature
         self._prev_rewards = dict()
@@ -61,11 +61,6 @@ class LBQLearner(QLearner):
                     self._q_values[self._prev_info_state][action_key] += (
                             self._step_size * self._last_loss_value)
                     self._prev_rewards[action_key] = np.array([])
-
-            # prev_q_value = self._q_values[self._prev_info_state][self._prev_action]
-            # self._last_loss_value = target - prev_q_value
-            # self._q_values[self._prev_info_state][self._prev_action] += (
-            #         self._step_size * self._last_loss_value)
 
             if time_step.last():  # prepare for the next episode.
                 self._prev_info_state = None
