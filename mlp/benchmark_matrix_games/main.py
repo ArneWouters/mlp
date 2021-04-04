@@ -23,7 +23,7 @@ flags.DEFINE_integer("num_eval_episodes", int(1e3),
                      "Number of episodes to use during each evaluation.")
 flags.DEFINE_integer("eval_freq", int(1e3),
                      "The frequency (in episodes) to run evaluation.")
-flags.DEFINE_string("game", "matrix_sh", "Game to load.")  # matrix_rps, matrix_mp, matrix_sh, matrix_cd
+flags.DEFINE_string("game", "matrix_mp", "Game to load.")  # matrix_rps, matrix_mp, matrix_sh, matrix_cd
 
 
 def eval_agents(env, agents, num_episodes):
