@@ -46,7 +46,7 @@ def main(_):
         game.new_initial_state(), [average_policy] * 2)
     print("Computed player 0 value: {}".format(average_policy_values[0]))
     print("Expected player 0 value: {}".format(-1 / 18))
-    np.savetxt("cfr_expl.csv", arr, delimiter=",")
+    np.savetxt("data/cfr_expl.csv", arr, delimiter=",")
 
 
 if __name__ == "__main__":

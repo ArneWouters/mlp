@@ -40,7 +40,7 @@ flags.DEFINE_list("hidden_layers_sizes", [
 ], "Number of hidden units in the avg-net and Q-net.")
 flags.DEFINE_integer("replay_buffer_capacity", int(2e5),
                      "Size of the replay buffer.")
-flags.DEFINE_integer("reservoir_buffer_capacity", int(2e6),
+flags.DEFINE_integer("reservoir_buffer_capacity", int(1e5),
                      "Size of the reservoir buffer.")
 flags.DEFINE_float("anticipatory_param", 0.1,
                    "Prob of using the rl best response as episode policy.")
@@ -105,7 +105,7 @@ def main(_):
 
         sess.run(tf.global_variables_initializer())
         for ep in range(FLAGS.num_train_episodes):
-            if (ep) % FLAGS.eval_every == 0:
+            if (ep + 1) % FLAGS.eval_every == 0:
                 losses = [agent.loss for agent in agents]
                 logging.info("Losses: %s", losses)
                 expl = exploitability.exploitability(env.game, expl_policies_avg)
@@ -124,7 +124,7 @@ def main(_):
             for agent in agents:
                 agent.step(time_step)
 
-        np.savetxt("nfsp_expl.csv", arr, delimiter=",")
+        np.savetxt("data/nfsp_expl.csv", arr, delimiter=",")
 
 
 if __name__ == "__main__":

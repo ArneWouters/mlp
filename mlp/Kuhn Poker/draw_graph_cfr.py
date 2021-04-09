@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 
 def draw_graph():
-    arr = np.genfromtxt('cfr_expl.csv')
+    arr = np.genfromtxt('data/cfr_expl.csv')
     data_points = np.array([i for i in range(arr.size)])
     plt.plot(data_points, arr)
     plt.ylabel('Exploitability')
