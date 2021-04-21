@@ -28,18 +28,20 @@ from absl import app
 from absl import flags
 from absl import logging
 import tensorflow.compat.v1 as tf
+import numpy as np
 
-from open_spiel.python.algorithms import neurd
+from open_spiel.python.algorithms import neurd, rcfr
 import pyspiel
+import time
 
 tf.enable_eager_execution()
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer("iterations", 1000, "Number of iterations")
+flags.DEFINE_integer("iterations", 1001, "Number of iterations")
 flags.DEFINE_string("game", "universal_poker", "Name of the game")
 flags.DEFINE_integer("players", 2, "Number of players")
-flags.DEFINE_integer("print_freq", 100, "How often to print the exploitability")
+flags.DEFINE_integer("print_freq", 20, "How often to print the exploitability")
 flags.DEFINE_integer("num_hidden_layers", 1,
                      "The number of hidden layers in the policy model.")
 flags.DEFINE_integer("num_hidden_units", 13,
@@ -64,6 +66,35 @@ flags.DEFINE_boolean(
     "the model stable in the absence of an entropy bonus.")
 
 
+def export_layers(game, models):
+    timestamp = round(time.time())
+
+    for i in range(len(models)):
+        model = models[i]
+        keras_model = tf.keras.Sequential(
+            [tf.keras.Input(shape=(rcfr.num_features(game),))] + model.layers
+        )
+        keras_model.save("output/exported_model" + str(i) + "_" + str(timestamp) + ".h5", save_format="h5")
+
+
+def import_layers(game, models):
+    reconstructed_models = [
+        tf.keras.models.load_model("aaaaaaaaa.h5", compile=False),
+        tf.keras.models.load_model("bbbbbbbbb.h5", compile=False)
+    ]
+
+    for i in range(len(models)):
+        m = models[i]
+        imported_layers = reconstructed_models[i].layers
+        for j in range(len(m.layers)):
+            m.layers[j].set_weights(imported_layers[j].get_weights())
+
+        # Construct variables for all layers by exercising the network.
+        x = tf.zeros([1, rcfr.num_features(game)])
+        for layer in m.layers:
+            x = layer(x)
+
+
 def main(_):
     game = pyspiel.load_game(FLAGS.game,
                              {"numPlayers": pyspiel.GameParameter(FLAGS.players)})
@@ -79,7 +110,9 @@ def main(_):
                 use_skip_connections=FLAGS.use_skip_connections,
                 autoencode=FLAGS.autoencode))
 
+    # import_layers(game, models)
     solver = neurd.CounterfactualNeurdSolver(game, models)
+    expl = np.array([])
 
     def _train(model, data):
         neurd.train(
@@ -95,8 +128,11 @@ def main(_):
         solver.evaluate_and_update_policy(_train)
         logging.info("Iteration %s", i)
         if i % FLAGS.print_freq == 0:
+            export_layers(game, models)
             conv = pyspiel.exploitability(game, solver.average_policy())
-            print("Iteration {} exploitability {}".format(i, conv))
+            expl = np.append(expl, conv)
+            logging.info("Iteration {} exploitability {}".format(i, conv))
+            np.savetxt("output/fcpa_expl.csv", expl, delimiter=",")
 
 
 if __name__ == "__main__":
