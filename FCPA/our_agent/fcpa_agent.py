@@ -100,7 +100,7 @@ class Agent(pyspiel.Bot):
             info_state_vector = tf.expand_dims(info_state_vector, axis=0)
         if len(legal_actions_mask.shape) == 1:
             legal_actions_mask = tf.expand_dims(legal_actions_mask, axis=0)
-        probs = self.deep_cfr_solver.policy_network((info_state_vector, legal_actions_mask),
+        probs = self.deep_cfr_solver._policy_network((info_state_vector, legal_actions_mask),
                                                     training=False)
         probs = probs.numpy()
         return {action: probs[0][action] for action in legal_actions}
