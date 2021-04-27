@@ -11,10 +11,14 @@ Copyright (c) 2021 KU Leuven. All rights reserved.
 
 import sys
 import argparse
+import os
 import logging
 import numpy as np
 import pyspiel
+import tensorflow.compat.v1 as tf
+
 from open_spiel.python.algorithms import evaluate_bots
+from open_spiel.python.algorithms import deep_cfr_tf2
 
 
 logger = logging.getLogger('be.kuleuven.cs.dtai.fcpa')
@@ -43,7 +47,16 @@ class Agent(pyspiel.Bot):
         a few seconds.
         """
         pyspiel.Bot.__init__(self)
+        fcpa_game_string = pyspiel.hunl_game_string("fcpa")
+        game = pyspiel.load_game(fcpa_game_string)
+        tf.enable_eager_execution()
         self.player_id = player_id
+        self.deep_cfr_solver = deep_cfr_tf2.DeepCFRSolver(
+            game,
+            policy_network_layers=(64, 128, 128, 64),
+            advantage_network_layers=(64, 64, 64, 64))
+        model_loc = os.path.join(os.path.dirname(os.path.realpath(__file__)), "saved_models/model2500")
+        self.deep_cfr_solver._policy_network = tf.keras.models.load_model(model_loc)
 
     def restart_at(self, state):
         """Starting a new game in the given state.
@@ -68,7 +81,29 @@ class Agent(pyspiel.Bot):
         :returns: The selected action from the legal actions, or
             `pyspiel.INVALID_ACTION` if there are no legal actions available.
         """
-        pass
+        prob_values = self.action_probabilities(state).values()
+        prob_list = [val / sum(prob_values) for val in prob_values]
+        rng = np.random.RandomState()
+        legal_actions = state.legal_actions(self.player_id)
+        action = rng.choice(legal_actions, p=prob_list)
+        return action
+
+    def action_probabilities(self, state):
+        """Returns action probabilities dict for a single batch."""
+        cur_player = state.current_player()
+        legal_actions = state.legal_actions(cur_player)
+        legal_actions_mask = tf.constant(
+            state.legal_actions_mask(cur_player), dtype=tf.float32)
+        info_state_vector = tf.constant(
+            state.information_state_tensor(), dtype=tf.float32)
+        if len(info_state_vector.shape) == 1:
+            info_state_vector = tf.expand_dims(info_state_vector, axis=0)
+        if len(legal_actions_mask.shape) == 1:
+            legal_actions_mask = tf.expand_dims(legal_actions_mask, axis=0)
+        probs = self.deep_cfr_solver.policy_network((info_state_vector, legal_actions_mask),
+                                                    training=False)
+        probs = probs.numpy()
+        return {action: probs[0][action] for action in legal_actions}
 
 
 def test_api_calls():
