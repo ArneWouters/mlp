@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from open_spiel.python import policy
 from open_spiel.python.algorithms import deep_cfr_tf2
 from open_spiel.python.bots import uniform_random
+from fold_call_agent import fcpa_agent as fold_call_agent
 import pyspiel
 
 
@@ -22,7 +23,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_integer("num_games", 3000, "Number of games to simulate")
 flags.DEFINE_integer("seed", 12761381, "The seed to use for the RNG.")
 
-# Supported types of players: "random", "check_call", "fold"
+# Supported types of players: "random", "fold", "check_call", "call_fold"
 flags.DEFINE_string("player1", "random", "Type of the agent for player 1.")
 
 
@@ -36,6 +37,8 @@ def LoadAgent(agent_type, game, player_id, rng):
     elif agent_type == "fold":
         policy = pyspiel.PreferredActionPolicy([0, 1])
         return pyspiel.make_policy_bot(game, player_id, FLAGS.seed, policy)
+    elif agent_type == "call_fold":
+        return fold_call_agent.get_agent_for_tournament(player_id, FLAGS.seed)
     else:
         raise RuntimeError("Unrecognized agent type: {}".format(agent_type))
 
@@ -69,7 +72,7 @@ def getDeepCFRAgent(game):
         game,
         policy_network_layers=(64, 128, 128, 64),
         advantage_network_layers=(64, 64, 64, 64))
-    deep_cfr_solver._policy_network = tf.keras.models.load_model("saved_models/model2500")
+    deep_cfr_solver._policy_network = tf.keras.models.load_model("saved_models/model7000")
     return deep_cfr_solver
 
 
