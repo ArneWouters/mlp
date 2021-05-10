@@ -11,10 +11,8 @@ import tensorflow.compat.v1 as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-from open_spiel.python import policy
 from open_spiel.python.algorithms import deep_cfr_tf2
-from open_spiel.python.bots import uniform_random
-from fold_call_agent import fcpa_agent as fold_call_agent
+from baseline_agents import check_call_agent, fold_call_agent, fold_agent, random_agent
 import pyspiel
 
 
@@ -24,19 +22,17 @@ flags.DEFINE_integer("num_games", 3000, "Number of games to simulate")
 flags.DEFINE_integer("seed", 12761381, "The seed to use for the RNG.")
 
 # Supported types of players: "random", "fold", "check_call", "call_fold"
-flags.DEFINE_string("player1", "random", "Type of the agent for player 1.")
+flags.DEFINE_string("player1", "call_fold", "Type of the agent for player 1.")
 
 
 def LoadAgent(agent_type, game, player_id, rng):
     """Return a bot based on the agent type."""
     if agent_type == "random":
-        return uniform_random.UniformRandomBot(player_id, rng)
+        return random_agent.get_agent_for_tournament(player_id, FLAGS.seed)
     elif agent_type == "check_call":
-        policy = pyspiel.PreferredActionPolicy([1, 0])
-        return pyspiel.make_policy_bot(game, player_id, FLAGS.seed, policy)
+        return check_call_agent.get_agent_for_tournament(player_id, FLAGS.seed)
     elif agent_type == "fold":
-        policy = pyspiel.PreferredActionPolicy([0, 1])
-        return pyspiel.make_policy_bot(game, player_id, FLAGS.seed, policy)
+        return fold_agent.get_agent_for_tournament(player_id, FLAGS.seed)
     elif agent_type == "call_fold":
         return fold_call_agent.get_agent_for_tournament(player_id, FLAGS.seed)
     else:
@@ -72,7 +68,7 @@ def getDeepCFRAgent(game):
         game,
         policy_network_layers=(64, 128, 128, 64),
         advantage_network_layers=(64, 64, 64, 64))
-    deep_cfr_solver._policy_network = tf.keras.models.load_model("saved_models/model7000")
+    deep_cfr_solver._policy_network = tf.keras.models.load_model("saved_models/iter_model120")
     return deep_cfr_solver
 
 
