@@ -29,8 +29,8 @@ import pyspiel
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer("num_iterations", 25, "Number of iterations")
-flags.DEFINE_integer("num_traversals", 100, "Number of traversals/games")
+flags.DEFINE_integer("num_iterations", 1, "Number of iterations")
+flags.DEFINE_integer("num_traversals", 10000, "Number of traversals/games")
 
 
 def main(unused_argv):
@@ -54,12 +54,12 @@ def main(unused_argv):
         train_device="gpu")
 
     # load model
-    deep_cfr_solver._policy_network = tf.keras.models.load_model("saved_model/my_model2")
+    # deep_cfr_solver._policy_network = tf.keras.models.load_model("saved_models/new_model")
 
-    for i in range(300):
+    for i in range(10):
         logging.info("Iteration: {}".format(i))
         deep_cfr_solver.solve()
-        deep_cfr_solver.save_policy_network("saved_model/my_model2")
+        deep_cfr_solver.save_policy_network("saved_models/new_model")
 
 
 if __name__ == "__main__":
